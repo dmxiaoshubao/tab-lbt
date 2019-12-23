@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="./css/reset.css">
+  <style>
+    .lbt {
+      width: 1200px;
+      height: 500px;
+      margin: 100px auto;
+    }
+    .left {
+      width: 50%;
+    }
+    .left .item {
+      top: 50%;
+      left: 0;
+      transition: all 0.3s ease;
+      width: 400px;
+      height: 400px;
+    }
+    .left img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .left .item_0 {
+      z-index: 999;
+      left: -50px;
+      transform: translateY(-50%) scale(1);
+    }
+    .left .item_1 {
+      z-index: 998;
+      left: 0;
+      transform: translateY(-50%) scale(0.9);
+      opacity: 0.3;
+    }
+    .left .item_2 {
+      z-index: 997;
+      left: 50px;
+      transform: translateY(-50%) scale(0.8);
+      opacity: 0.2;
+    }
+    .left .item_3 {
+      z-index: 996;
+      left: 50px;
+      transform: translateY(-50%) scale(0.8);
+      opacity: 0.2;
+    }
+    .right {
+      width: 50%;
+    }
+    .tab {
+      width: 50%;
+      height: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    .arrow-right {
+      width: 50px;
+      height: 50px;
+      top: 50%;
+      right: 0;
+      background-color: #fff;
+      transform: translate3d(50%,-50%,0) rotate(45deg);
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    .arrow-right span {
+      transform: rotate(-45deg);
+      font-size: 20px;
+    }
+  </style>
+  <title>tab轮播</title>
+</head>
+<body>
+  <section class="lbt bd-1 flex relative">
+    <div class="left bd-r-1 relative">
+      <div class="item absolute"></div>
+      <div class="item absolute"></div>
+      <div class="item absolute"></div>
+      <div class="item absolute"></div>
+    </div>
+    <div class="right flex flex-wrap">
+      <div class="tab bd-r-1 bd-b-1"></div>
+      <div class="tab bd-b-1"></div>
+      <div class="tab bd-r-1"></div>
+      <div class="tab"></div>
+    </div>
+    <div class="arrow-right flex flex-center bd-1 absolute">
+      <span>&gt;</span>
+    </div>
+  </section>
+  <script src="./js/jquery.min.js"></script>
+  <script>
+    $(function() {
+      let indexArr = []
+      let remoteData = {
+        images: [
+          {
+            uri: './images/1.jpg'
+          },
+          {
+            uri: './images/2.jpg'
+          },
+          {
+            uri: './images/3.jpg'
+          },
+          {
+            uri: './images/4.jpg'
+          },
+        ],
+        tabs: [
+          {
+            index: 0,
+            title: '小书包'
+          },
+          {
+            index: 1,
+            title: '大书包'
+          },
+          {
+            index: 0,
+            title: '书包哥'
+          },
+          {
+            index: 0,
+            title: '书包仔'
+          },
+        ]
+      }
+      init()
+
+      function init() {
+        initEle()
+        handleEvent()
+      }
+
+      function initEle() {
+        let $right = $('.lbt .right')
+        let $left = $('.lbt .left')
+        $right.children('.tab').each((index, item) => {
+          $(item).attr('data-tab', index).text(remoteData.tabs[index].title)
+          indexArr = [...indexArr, index]
+          $left.children('.item:nth-child('+(index+1)+')')
+               .addClass('item_'+index)
+               .attr({'data-item': index, 'data-index': index})
+               .append('<img src='+remoteData.images[index].uri+' />')
+        })
+      }
+      function handleEvent() {
+        let $right = $('.lbt .right')
+        let $left = $('.lbt .left')
+
+        $right.on('click','.tab', function() {
+          let tab = Number($(this).attr('data-tab'))
+          console.log('tab', tab)
+          // 获取当前item所在位置。
+          let item = Number($left.find('.item_0').attr('data-item'))
+          console.log('item', item)
+          handleTransform(tab, item)
+        })
+        // 点击右箭头向右轮播。
+        $('.lbt .arrow-right').on('click', function() {
+          let tab = Number($left.find('.item_1').attr('data-item'))
+          let item = Number($left.find('.item_0').attr('data-item'))
+          handleTransform(tab, item)
+        })
+      }
+      function handleTransform(tab, item) {
+        // 如果点击的tab不是当前处于第一位的元素。 
+        if (tab !== item) {
+          let $left = $('.lbt .left')
+          let len = indexArr.length
+          // 做移出动画。获取当前点击的tab的data-tab。根据data-tab来判定需要做左移动画的item的个数。这里的个数是指层级高于当前tab的元素。
+          let currentIndex = $left.children('.item:nth-child('+(tab+1)+')').attr('data-index')
+          console.log(currentIndex)
+          for (let i = 0; i < currentIndex; i++) {
+            const LEFT = 100 // 让它们都往左移100px的距离。
+            let currentLeft = $left.find('.item_'+ i).css('left').slice(0, -2)
+            console.log(currentLeft)
+            $left.find('.item_'+ i)
+                 .css({left: currentLeft - LEFT, opacity: 0})
+          }
+          // 调换index位置。
+          // 如果key > 0 此时是向右轮播。
+          let key = tab - item
+          indexArr = indexArr.map(value => {
+            value = key > 0 ? 
+                (value - key >= 0 ? value - key : value - key + len)
+              : (value - key >= len ? value - key - len : value - key)
+            return value
+          })
+
+          let timeout = setTimeout(() => {
+            $left.children('.item').each((index, item) => {
+              $(item).attr('data-index', indexArr[index])
+                     .removeAttr('style')
+                     .removeClass().addClass('item absolute item_'+ indexArr[index])
+              })
+              clearTimeout(timeout)
+          }, 300)
+        }
+      }
+    })
+  </script>
+</body>
+</html>
